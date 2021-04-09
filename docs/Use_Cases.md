@@ -18,7 +18,7 @@
 - *User* - Researcher testing data points
 - *Function* -  Use physics to obtain output spectra from the inputs
 - *Results* - A set of output spectra for each set of input parameters 
-	Inputs: dye concentration, basis spectra, set of actions
+	- **Inputs**: dye concentration, basis spectra, set of actions
 
 5. Assign reward for each set of input parameters
 - *User* - Researcher testing data points 

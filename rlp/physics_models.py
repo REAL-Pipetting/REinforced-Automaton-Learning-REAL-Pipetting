@@ -1,3 +1,5 @@
+import numpy as np
+
 def beers_law(solution, path_length, coeffs, min_wavelength, max_wavelength):
     """
     Applys Beers-Lampert Law to get the total absorbtion
@@ -32,3 +34,31 @@ def beers_law(solution, path_length, coeffs, min_wavelength, max_wavelength):
         
     
     return wavelengths, spectra*path_length
+
+
+def random_solution(coeffs, complexity):
+    """
+    """
+    cont = True
+    while cont:
+        opt = coeffs.columns[1:]
+        solution = {}
+        rand = np.random.rand(3)
+        for i, name in enumerate(opt):
+            if rand[i] > complexity:
+                solution[name] = np.random.random() + .1
+                
+        if len(solution) is not 0:
+            cont = False
+    
+    return solution
+    
+    
+    
+def random_spectra(path_length, coeffs, min_wavelength, max_wavelength, complexity):
+    """
+    """
+    
+    solution = random_solution(coeffs, complexity)
+    return beers_law(solution, path_length, coeffs, min_wavelength, max_wavelength)
+    

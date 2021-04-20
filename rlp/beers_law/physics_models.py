@@ -43,7 +43,7 @@ def random_solution(coeffs, complexity):
     while cont:
         opt = coeffs.columns[1:]
         solution = {}
-        rand = np.random.rand(3)
+        rand = np.random.rand(len(opt))
         for i, name in enumerate(opt):
             if rand[i] > complexity:
                 solution[name] = np.random.random() + .1

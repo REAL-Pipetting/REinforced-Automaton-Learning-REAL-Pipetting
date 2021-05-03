@@ -73,7 +73,7 @@ class BatchGPUCB(GPUCB):
         Child init function.
 
         Arguments:
-            bacth_size - The number of trials in a single batch.
+            batch_size - The number of trials in a single batch.
                 type == int
         args:
             meshgrid - The parameter space on which to explore possible inputs.
@@ -130,7 +130,7 @@ class BatchGPUCB(GPUCB):
 
     
     def learn_with_random(self):
-                # insert here "grid search" if self.T is 0
+        # insert here "grid search" if self.T is 0
         # currently, it takes the first in the parameter list
         grid_indices = self.argsort_ucb_with_random()
         self.batch_sample(self.X_grid[grid_indices])
@@ -144,3 +144,14 @@ class BatchGPUCB(GPUCB):
         # increase time step
         self.T = self.T + 1
         
+        
+    def reset(self, env):
+        self.X = []
+        self.Y = []
+        self.T = 0
+        self.mu = np.array([0. for _ in range(self.X_grid.shape[0])])
+        self.sigma = np.array([0.5 for _ in range(self.X_grid.shape[0])])
+        self.env = env
+        
+
+   

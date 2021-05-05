@@ -73,7 +73,7 @@ class BatchGPUCB(GPUCB):
         Child init function.
 
         Arguments:
-            bacth_size - The number of trials in a single batch.
+            batch_size - The number of trials in a single batch.
                 type == int
         args:
             meshgrid - The parameter space on which to explore possible inputs.
@@ -120,3 +120,38 @@ class BatchGPUCB(GPUCB):
             ys.append(y)
         self.Y.append(ys)
         self.X.append(xs)
+
+    
+    def argsort_ucb_with_random(self):
+        argsort_arr = np.flip(np.argsort((self.mu + self.sigma * np.sqrt(self.beta)) * 
+                                np.random.normal(loc=1, scale=.1, size=1)))
+        
+        return argsort_arr[:self.batch_size]
+
+    
+    def learn_with_random(self):
+        # insert here "grid search" if self.T is 0
+        # currently, it takes the first in the parameter list
+        grid_indices = self.argsort_ucb_with_random()
+        self.batch_sample(self.X_grid[grid_indices])
+        # get ucb's from GP
+        gp = GaussianProcessRegressor()
+        # print(np.array(self.X).shape)
+        X = np.array(self.X).reshape(-1, self.input_dimension)
+        Y = np.array(self.Y).reshape(-1)
+        gp.fit(X, Y)
+        self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)
+        # increase time step
+        self.T = self.T + 1
+        
+        
+    def reset(self, env):
+        self.X = []
+        self.Y = []
+        self.T = 0
+        self.mu = np.array([0. for _ in range(self.X_grid.shape[0])])
+        self.sigma = np.array([0.5 for _ in range(self.X_grid.shape[0])])
+        self.env = env
+        
+
+   

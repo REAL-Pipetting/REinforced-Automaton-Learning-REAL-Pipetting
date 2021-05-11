@@ -1,0 +1,6 @@
+name: rlp_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - numpy=1.19.2

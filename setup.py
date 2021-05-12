@@ -7,12 +7,12 @@ import sys
 import time
 from setuptools import setup, find_packages
 
-__author__ = "Samantha Tetef, Huat Chiang, William Ballengee, Ahmed Eshaq"
+__author__ = "William Ballengee, Huat Chiang, Ahmed Eshaq, Samantha Tetef"
 __copyright__ = "LICENSE.txt"
 __version__ = "0.1.0"
 
 setup(
-    name='gandy',
+    name='realpy',
     version=__version__,
     url='https://github.com/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting',
     author=__author__,
@@ -27,8 +27,8 @@ setup(
     description='Reinforcement learning agent for planning pipetting experiments executed by the OT2 robots.',
     keywords=[
         'GPBUCB',
-        'BPUCG',
-        'Genetic_algorithm',
+        'GPUCB',
+        'genetic_algorithm',
         'reinforcement_learning',
     ],
     packages=find_packages(exclude="tests"),

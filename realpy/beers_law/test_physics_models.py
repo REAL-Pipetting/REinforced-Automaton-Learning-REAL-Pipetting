@@ -4,7 +4,7 @@ import math
 
 
 def test_beers_law():
-    test_coeffs = pd.read_csv('test_coeff.csv')
+    test_coeffs = pd.read_csv('coeff_example.csv')
     test_solution_1 = {'A': .1, 'B': .4, 'C': 1.0}  # 'Name'->'Molarity'
     test_path_length = 1  # cm
     test_max_wl = 800
@@ -25,7 +25,7 @@ def test_beers_law():
     
     
 def test_random_solution():
-    test_coeffs = pd.read_csv('test_coeff.csv')
+    test_coeffs = pd.read_csv('coeff_example.csv')
     test_complexity = .3
     
     sol = physics_models.random_solution(test_coeffs, test_complexity)
@@ -38,7 +38,7 @@ def test_random_solution():
                                             f'greater than expected, got {sol[key]}'
     
 def test_random_spectra():
-    test_coeffs = pd.read_csv('test_coeff.csv')
+    test_coeffs = pd.read_csv('coeff_example.csv')
     test_solution_1 = {'A': .1, 'B': .4, 'C': 1.0}  # 'Name'->'Molarity'
     test_path_length = 1  # cm
     test_max = 800

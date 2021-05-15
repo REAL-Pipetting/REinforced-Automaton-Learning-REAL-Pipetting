@@ -138,10 +138,11 @@ class BatchGPUCB(GPUCB):
             4. Saves the new predicted means and standard deviations.
             5. Increases the time step.
         """
-        # insert here Latin Hypercube sampling if self.T is 0
-        # currently, it takes the first in the parameter list
-        grid_indices = self.argsort_ucb()  # 1
-        self.batch_sample(self.X_grid[grid_indices])  # 2
+        if self.T == 0:
+            self.london_hypercube_sample()
+        else:
+            grid_indices = self.argsort_ucb()  # 1
+            self.batch_sample(self.X_grid[grid_indices])  # 2
         # get ucb's from GP
         gp = sklearn.gaussian_process.GaussianProcessRegressor()
         # reshape appropriately
@@ -152,6 +153,7 @@ class BatchGPUCB(GPUCB):
         # increase time step
         self.T = self.T + 1  # 5
         return None
+
 
     def batch_sample(self, xs):
         """
@@ -170,6 +172,26 @@ class BatchGPUCB(GPUCB):
         self.Y.append(ys)
         self.X.append(xs)
         return None
+    
+    
+    def london_hypercube_sample(self):
+        """
+        Does a London Hypercube (LH) sampling of the parameter space.
+        LH based on the indexes of the parameter space. Use indices
+        to get X values and pass into batch_sample.
+        """
+
+        limits = []
+        for dim in self.meshgrid.shape[1:]:
+            limits.append([0, dim])
+
+        LH_sampler = LHS(xlimits=np.array(limits))
+        sampled = np.round(LH_sampler(self.batch_size)).astype(int)
+        t = self.meshgrid.T
+        xs = [t[tuple(sample)] for sample in sampled]
+        self.batch_sample(xs)
+        return None
+            
 
     # Random section (tests to try to encourage exploration)
 

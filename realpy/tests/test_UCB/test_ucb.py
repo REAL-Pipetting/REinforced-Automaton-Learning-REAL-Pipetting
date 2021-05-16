@@ -183,3 +183,30 @@ class TestBatchGPUCB(unittest.TestCase):
         indices = [2, 4, 5]
         subject.batch_sample(indices)
         self.assertEqual(subject.Y[0], ["Batch", "Batch", "Batch"])
+        
+    @unittest.mock.patch('smt.sampling_methods.LHS')
+    def test_london_hypercube_sample(self, mocked_lhs):
+        mocked_env = mock.MagicMock(name='env')
+        mocked_env.sample = mock.MagicMock(name='env_sample',
+                                           return_value="Batch")
+        
+        mocked_lhs.return_value = mock.MagicMock(name='LH_sample',
+                                                 return_value=[[3.0, 2.1], 
+                                                               [0.4, 1.1], 
+                                                               [0.0, 1.9]])
+        
+        n = 5
+        batch_size = 3
+        coeffs = np.arange(n)
+        meshgrid = np.meshgrid(coeffs, coeffs)
+        subject = ucb.BatchGPUCB(batch_size, meshgrid, mocked_env, beta=1)
+        subject.london_hypercube_sample()
+        self.assertEqual(list(subject.X[0][0]), [3, 2])
+        self.assertEqual(list(subject.X[0][1]), [0, 1])
+        self.assertEqual(list(subject.X[0][2]), [0, 2])
+        name, args, kwargs = mocked_lhs.mock_calls[0]
+        print(kwargs['xlimits'])
+        self.assertEqual(kwargs['xlimits'].tolist(), [[0, n], [0, n]])
+
+
+

@@ -7,6 +7,7 @@ Gaussian Process Bandit Optimization, Desautels, et. al, 2014.
 """
 import numpy as np
 import sklearn.gaussian_process
+import smt.sampling_methods
 
 
 class GPUCB(object):
@@ -185,7 +186,7 @@ class BatchGPUCB(GPUCB):
         for dim in self.meshgrid.shape[1:]:
             limits.append([0, dim])
 
-        LH_sampler = LHS(xlimits=np.array(limits))
+        LH_sampler = smt.sampling_methods.LHS(xlimits=np.array(limits))
         sampled = np.round(LH_sampler(self.batch_size)).astype(int)
         t = self.meshgrid.T
         xs = [t[tuple(sample)] for sample in sampled]

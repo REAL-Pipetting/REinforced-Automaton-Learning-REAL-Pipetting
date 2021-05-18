@@ -35,5 +35,6 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'numpy>=1.19.1'
+        'smt>=0.9.0'
     ]
 )

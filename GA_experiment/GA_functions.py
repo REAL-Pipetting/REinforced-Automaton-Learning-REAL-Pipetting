@@ -77,7 +77,7 @@ def fitness(spectra, conc, desired):
     new_array = np.hstack((spectra, conc, fitness_score.reshape(1,-1).T))
     sorted_array = new_array[np.argsort(new_array[:, -1])]
     lower_fitness, upper_fitness = np.array_split(sorted_array, 2)
-    return upper_fitness, np.median(fitness_score), np.max(fitness_score)
+    return sorted_array, np.median(fitness_score), np.max(fitness_score)
 
 def select_parents(sorted_array, n_parents, fitness_param):
     
@@ -91,7 +91,7 @@ def select_parents(sorted_array, n_parents, fitness_param):
        Outputs:
      - parents: 2D array of the same number of columns as sorted_array, but with n_parents rows. Rows with higher fitness should appear in a higher frequency in this row than ones with lower fitness.'''
     np.random.seed(seed)
-    fitness_list = sorted_array[:,-1]**fitness_param #the number 2 controls how selective the selection process is. A higher number will be more selective
+    fitness_list = sorted_array[:,-1] #*fitness_param #the number 2 controls how selective the selection process is. A higher number will be more selective
     fitness_sum = np.sum(fitness_list)
     probability = fitness_list/fitness_sum
     cumsum = np.cumsum(probability)

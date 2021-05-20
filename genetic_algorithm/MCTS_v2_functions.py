@@ -1,5 +1,7 @@
 import numpy as np
+import math
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import MinMaxScaler
@@ -47,12 +49,12 @@ def zeroth_iteration(conc_array, spectra_array, x_test):
 
 
 def perform_Surrogate_Prediction(next_gen_conc, conc_array_actual, spectra_array_actual):
-    lr = LinearRegression().fit(conc_array_actual, spectra_array_actual)
-    score = lr.score(conc_array_actual, spectra_array_actual)
-    spectra_prediction = lr.predict(next_gen_conc)
-    #gpr = GaussianProcessRegressor().fit(conc_array_actual, spectra_array_actual)
-    #score = gpr.score(conc_array_actual, spectra_array_actual)
-    #spectra_prediction = gpr.predict(next_gen_conc)
+    #lr = LinearRegression().fit(conc_array_actual, spectra_array_actual)
+    #score = lr.score(conc_array_actual, spectra_array_actual)
+    #spectra_prediction = lr.predict(next_gen_conc)
+    gpr = GaussianProcessRegressor().fit(conc_array_actual, spectra_array_actual)
+    score = gpr.score(conc_array_actual, spectra_array_actual)
+    spectra_prediction = gpr.predict(next_gen_conc)
     return spectra_prediction, score 
 
 def MCTS(Iterations_per_move, moves, GA_iterations, current_gen_spectra, next_gen_conc, x_test, conc_array_actual, spectra_array_actual, seed, n_samples):
@@ -67,7 +69,7 @@ def MCTS(Iterations_per_move, moves, GA_iterations, current_gen_spectra, next_ge
             if GA_iteration == 0:
                 for cols in range(move_number+1):
                     mutation_rate_array = (np.round(np.random.uniform(0,10,Iterations_per_move))/10).reshape(-1,1)
-                    fitness_multiplier_array = (np.round(np.random.uniform(1,8,Iterations_per_move))).reshape(-1,1)
+                    fitness_multiplier_array = (np.round(np.random.uniform(1,4,Iterations_per_move))).reshape(-1,1)
                     move = np.hstack((mutation_rate_array, fitness_multiplier_array))
                     if cols == 0:
                         move_array = move
@@ -169,16 +171,18 @@ def plot_fitness(next_gen_conc, current_gen_spectra, x_test, median_fitness_list
     ax.plot(iteration, max_fitness_list, label = 'max fitness')
     #ax[0].set_ylim([0,5])
     #ax[1].set_ylim([0,5])
+  
+    ax.set_xticks(iteration)
+    
     ax.set_ylabel('fitness')
     ax.set_xlabel('Iteration')
-    #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     ax.legend()
     plt.show()
     print('The max fitness is:', max_fitness)
     print('The median fitness is:', median_fitness)
     return median_fitness_list, max_fitness_list, iteration  
     
-def plot_spectra(current_gen_spectra, x_test, wavelength):
+def plot_spectra(current_gen_spectra, x_test, wavelength, iteration):
     spectra = current_gen_spectra
     spectra = spectra.T
     spectra = MinMaxScaler().fit(spectra).transform(spectra).T
@@ -205,7 +209,8 @@ def plot_spectra(current_gen_spectra, x_test, wavelength):
     ax[1].set_title('Spectra of Best Sample')
     ax[1].set_ylabel('Absorbance')
     ax[1].set_xlabel('Wavelength (nm)')
-    
+    figure_name = 'Iteration_' + str(iteration[-1]) + '.png'
+    plt.savefig(figure_name)
         
         
         

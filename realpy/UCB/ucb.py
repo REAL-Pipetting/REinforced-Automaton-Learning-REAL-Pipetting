@@ -92,7 +92,7 @@ class GPUCB(object):
 
 
 class BatchGPUCB(GPUCB):
-    """Batched Guassian Process Upper Confidence Bound agent."""
+    """Batched Guassian Process Upper Confidence Bound agent V1."""
 
     def __init__(self, batch_size, *args, **kwargs):
         """
@@ -155,6 +155,21 @@ class BatchGPUCB(GPUCB):
         self.T = self.T + 1  # 5
         return None
 
+#     def batch_sample(self, xs):
+#         """
+#         Sample the sets of input in xs using the environment object.
+#         Save each input and output pair to the X and Y attributes,
+#         respectively.
+
+#         Arguments:
+#             xs - The set of input parameters to sample.
+#                 type == list or array of tuples
+#         """
+#         self.environment.write_actions(xs, self.T)
+#         ys = self.environment.sample()
+#         self.Y.append(ys)
+#         self.X.append(xs)
+#         return None
 
     def batch_sample(self, xs):
         """
@@ -173,8 +188,7 @@ class BatchGPUCB(GPUCB):
         self.Y.append(ys)
         self.X.append(xs)
         return None
-    
-    
+
     def london_hypercube_sample(self):
         """
         Does a London Hypercube (LH) sampling of the parameter space.
@@ -192,51 +206,121 @@ class BatchGPUCB(GPUCB):
         xs = [t[tuple(sample)] for sample in sampled]
         self.batch_sample(xs)
         return None
-            
 
-    # Random section (tests to try to encourage exploration)
 
-    def argsort_ucb_with_random(self, std=0.1):
-        """
-        Return the indices of the batch with the highest UCB.
+class BatchGPUCBv2(BatchGPUCB):
+    """
+    Batched Guassian Process Upper Confidence Bound agent V2. With
+    GP regressions in-batch. Slower compute time, but should
+    in general converge in fewer batchs than V1.
+    """
+    def __init__(self, *args, **kwargs):
+        super(BatchGPUCBv2, self).__init__(*args, **kwargs)
+        self.to_exclude = []
 
-        Arguments:
-            std - The standard deviation ("scale") of the unit normal
-                  random coefficient.
-                default = 0.1
-                type == float
-        """
-        argsort_arr = np.flip(np.argsort((self.mu + self.sigma *
-                                          np.sqrt(self.beta)) *
-                              np.random.normal(loc=1, scale=std, size=1)))
-        return argsort_arr[:self.batch_size]
-
-    def learn_with_random(self):
+    def learn(self):
         """
         Learning function.
 
         Each time learn is called, the agent
-            1. Finds the batch of input parameters with the highest upper
-               confidence bound, which have been randomly fluctuated
-               (to increase exploration).
-            2. Samples those paramaters to get their corresponding batched
-               outputs.
+            1. Finds <batch_size> best samples, performing a new GP Regression
+               after each sample, assuming that sample returns its mean
+            2. "Forgots" assumed samples and actually samples those paramaters
+               to get their corresponding batched outputs.
             3. Trains a new Guassian Process regressor on all data points it
                has seen, including the latest batched sampling.
             4. Saves the new predicted means and standard deviations.
             5. Increases the time step.
+
+        For the first timestep, a london hypercube sampling method is used
         """
-        # insert here Latin Hypercube sampling if self.T is 0
-        # currently, it takes the first in the parameter list
-        grid_indices = self.argsort_ucb_with_random()  # 1
-        self.batch_sample(self.X_grid[grid_indices])  # 2
-        # get ucb's from GP
-        gp = sklearn.gaussian_process.GaussianProcessRegressor()
-        # reshape appropriately
+        if self.T == 0:
+            self.london_hypercube_sample()
+        else:
+            best_idxs = []
+            for i in range(self.batch_size):  # 1
+                best_idx = self.get_best_ucb()
+                best_idxs.append(best_idx.item())
+                gp = sklearn.gaussian_process.GaussianProcessRegressor()
+                self.false_sample(best_idx)
+                X = np.array(self.X).reshape(-1, self.input_dimension)
+                Y = np.array(self.Y).reshape(-1)
+                gp.fit(X, Y)
+                self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)
+
+            self.batch_sample(self.X_grid[best_idxs])  # 2
+
+        gp = sklearn.gaussian_process.GaussianProcessRegressor()  # 3
         X = np.array(self.X).reshape(-1, self.input_dimension)
         Y = np.array(self.Y).reshape(-1)
-        gp.fit(X, Y)  # 3
+        gp.fit(X, Y)
         self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)  # 4
-        # increase time step
-        self.T = self.T + 1  # 5
+        self.T = self.T + 1   # 5
         return None
+
+    def batch_sample(self, xs):
+        """
+        Forgots assumed samples from within batch. Then samples the sets of
+        input in xs using the environment object.
+        Save each input and output pair to the X and Y attributes,
+        respectively. Resets to_exclude for the next batch.
+
+        Arguments:
+            xs - The set of input parameters to sample.
+                type == list or array of tuples
+        """
+        self.X = self.X[0:-self.batch_size]
+        self.Y = self.Y[0:-self.batch_size]
+        ys = []
+        for x in xs:
+            y = self.environment.sample(x)
+            ys.append(y)
+            self.X.append(x)
+            self.Y.append(y)
+        self.to_exclude = []
+        return None
+
+#     def batch_sample(self, xs):
+#         """
+#         Forgots assumed samples from within batch.
+#         Then samples the sets of input in xs using the environment object.
+#         Save each input and output pair to the X and Y attributes,
+#         respectively. Resets to_exclude for the next batch.
+
+#         Arguments:
+#             xs - The set of input parameters to sample.
+#                 type == list or array of tuples
+#         """
+#         self.X = self.X[0:-self.batch_size]
+#         self.Y = self.Y[0:-self.batch_size]
+
+#         self.environment.write_actions(xs, self.T)
+#         ys = self.environment.sample()
+#         for x in xs:
+#             self.X.append(x)
+#         for y in ys:
+#             self.Y.append(y)
+#         return None
+
+    def false_sample(self, i):
+        """
+        Appends sample parameters and currently known mean to X and Y
+        respectively.
+        """
+        self.X.append(self.X_grid[i].tolist())
+        self.Y.append(self.mu[i])
+
+    def get_best_ucb(self):
+        """
+        Return the index of the batch with the highest UCB. That
+        has not already been selected in that batch
+        """
+        argsort_arr = np.flip(np.argsort(self.mu + self.sigma *
+                                         np.sqrt(self.beta)))
+        i = 0
+        idx = argsort_arr[i]
+        while idx in self.to_exclude:
+            i += 1
+            idx = argsort_arr[i]
+        self.to_exclude.append(idx)
+        return idx

@@ -205,5 +205,101 @@ class TestBatchGPUCB(unittest.TestCase):
         self.assertEqual(list(subject.X[0][1]), [0, 1])
         self.assertEqual(list(subject.X[0][2]), [0, 2])
         name, args, kwargs = mocked_lhs.mock_calls[0]
-        print(kwargs['xlimits'])
         self.assertEqual(kwargs['xlimits'].tolist(), [[0, n], [0, n]])
+
+
+class TestBatchGPUCBv2(unittest.TestCase):
+    """Test Batch GP UCBv2 class."""
+
+    def test_inheritence(self):
+        """Ensure the subclass class inherits from parent class."""
+        self.assertTrue(issubclass(ucb.BatchGPUCBv2, ucb.BatchGPUCB))
+
+    def test___init__(self):
+        """Test initialization of the Batch GP UCBv2 class."""
+        # initialize
+        mocked_env = mock.MagicMock(name='env')
+        n = 5
+        batch_size = 3
+        coeffs = np.arange(n)
+        meshgrid = np.meshgrid(coeffs, coeffs)
+        subject = ucb.BatchGPUCBv2(batch_size, meshgrid, mocked_env, beta=1)
+        # test assignment of additional attribute
+        self.assertTrue(hasattr(subject, 'batch_size'))
+        self.assertEqual(subject.batch_size, batch_size)
+
+    def test_get_best_ucb(self):
+        """Test getting the best_idx of the UCB."""
+        # initialize
+        mocked_env = mock.MagicMock(name='env',
+                                    return_value="Batch")
+        n = 5
+        batch_size = 3
+        coeffs = np.arange(n)
+        meshgrid = np.meshgrid(coeffs, coeffs)
+        subject = ucb.BatchGPUCBv2(batch_size, meshgrid, mocked_env, beta=1)
+        # making the max occur at starting at index 2 for an entire batch
+        subject.mu[2:2 + batch_size] = 1
+        subject.mu[3] = 10
+        subject.mu[0] = 9
+        return_val = subject.get_best_ucb()
+        expected_val = 3
+        self.assertEqual(return_val, expected_val)
+        return_val = subject.get_best_ucb()
+        expected_val = 0
+        self.assertEqual(return_val, expected_val)
+
+    @unittest.mock.patch('sklearn.gaussian_process.GaussianProcessRegressor')
+    def test_learn(self, mocked_gp):
+        """Test the learning function."""
+        # initialize
+        mocked_env = mock.MagicMock(name='env',
+                                    return_value="Batch")
+        n = 5
+        batch_size = 3
+        coeffs = np.arange(n)
+        meshgrid = np.meshgrid(coeffs, coeffs)
+        subject = ucb.BatchGPUCBv2(batch_size, meshgrid, mocked_env, beta=1)
+
+        # set up mocked functions
+        subject.batch_sample = mock.MagicMock(name='batch sample')
+        mocked_gp.return_value = mock.MagicMock(name='Mocked GP')
+        mocked_gp.return_value.predict.return_value = ('Mu', 'Sigma')
+        subject.learn()
+
+        # test GP correctly called
+        self.assertTrue(mocked_gp.return_value.fit.called)
+        self.assertEqual(subject.mu, 'Mu')
+        self.assertEqual(subject.sigma, 'Sigma')
+        # check time step increase
+        self.assertEqual(subject.T, 1)
+
+    def test_batch_sample(self):
+        """Test the environment sampling."""
+        # initialize
+        mocked_env = mock.MagicMock(name='env')
+        mocked_env.sample = mock.MagicMock(name='env_sample',
+                                           return_value="Batch")
+        n = 5
+        batch_size = 3
+        coeffs = np.arange(n)
+        meshgrid = np.meshgrid(coeffs, coeffs)
+        subject = ucb.BatchGPUCBv2(batch_size, meshgrid, mocked_env, beta=1)
+        subject.to_exclude.append(1)
+
+        indices = [2, 4, 5]
+        subject.batch_sample(indices)
+        self.assertEqual(subject.Y, ["Batch", "Batch", "Batch"])
+        self.assertEqual(subject.to_exclude, [])
+
+    def test_false_sample(self):
+        mocked_env = mock.MagicMock(name='env',
+                                    return_value="Batch")
+        n = 5
+        batch_size = 3
+        coeffs = np.arange(n)
+        meshgrid = np.meshgrid(coeffs, coeffs)
+        subject = ucb.BatchGPUCBv2(batch_size, meshgrid, mocked_env, beta=1)
+        subject.false_sample(0)
+        self.assertEqual(subject.X[-1], [0, 0])
+        self.assertEqual(subject.Y[-1], 0)

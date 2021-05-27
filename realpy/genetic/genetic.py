@@ -5,12 +5,13 @@ import random
 
 
 class GA(object):
-	"""Genetic Algorithm agent class."""
+    """Genetic Algorithm agent class."""
 
     def __init__(self, environment, batch_size, first_generation,
                  mutation_rate=.05, n_parents=3):
         """
         Init function.
+
         Arguments:
             environment - Environment class. Should have a 'sample' function.
                 type == class
@@ -57,7 +58,8 @@ class GA(object):
 
     def crossover(self, parents):
         """
-        Assigns self.generation with the new generation.
+        Assign self.generation with the new generation.
+
         New generation created by crossing-over parents and mutating.
 
         Arguments:
@@ -81,8 +83,9 @@ class GA(object):
     def mutation(self, children):
         """
         Mutate children by randomly multiplying gene by a value in [.25, .75].
+
         Likelihood of mutation determined by mutation rate.
-        Returns mutated children.
+        Return mutated children.
 
         Arguments:
             children - generation of samples to mutate

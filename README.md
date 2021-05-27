@@ -1,5 +1,6 @@
 # REinforced-Automaton-Learning-REAL-Pipetting
 [![Build Status](https://travis-ci.com/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting.svg?branch=main)](https://travis-ci.com/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting)
+[![Coverage Status](https://coveralls.io/repos/github/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting/badge.svg?branch=main)](https://coveralls.io/github/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting?branch=main)
 
 
 This project integrates reinforcement learning with the open source pipetting robots from Opentrons (OT2) to guide future batched trials in high throughput experiments. We utilize two reinforcement learning algorithms:

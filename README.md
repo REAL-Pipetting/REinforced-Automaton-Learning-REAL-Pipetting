@@ -13,3 +13,10 @@ Genetic algorithm ...
 
 ### GP-BUCB
 GP-BUCB utilizes ...
+
+### Installation
+To install realpy:
+1. Clone this repo
+2. ```pip install /path/to/directory/with/this/readme/```
+Or navigate to this directory in the terminal and ```pip install .```
+Afterwards, you can ```import realpy``` for use in any python file.

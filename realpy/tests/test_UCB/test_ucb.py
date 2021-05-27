@@ -186,6 +186,7 @@ class TestBatchGPUCB(unittest.TestCase):
 
     @unittest.mock.patch('smt.sampling_methods.LHS')
     def test_london_hypercube_sample(self, mocked_lhs):
+        """Test Latin Hypercube (LH) sampling."""
         mocked_env = mock.MagicMock(name='env')
         mocked_env.sample = mock.MagicMock(name='env_sample',
                                            return_value="Batch")
@@ -293,6 +294,7 @@ class TestHallucinateBatchGPUCB(unittest.TestCase):
         self.assertEqual(subject.to_exclude, [])
 
     def test_false_sample(self):
+        """Test false sample."""
         mocked_env = mock.MagicMock(name='env',
                                     return_value="Batch")
         n = 5

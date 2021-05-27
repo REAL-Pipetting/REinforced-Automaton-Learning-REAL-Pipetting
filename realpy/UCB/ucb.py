@@ -189,14 +189,15 @@ class BatchGPUCB(GPUCB):
         return None
 
 
-class BatchGPUCBv2(BatchGPUCB):
+class HallucinateBatchGPUCB(BatchGPUCB):
     """
-    Batched Guassian Process Upper Confidence Bound agent V2. With
-    GP regressions in-batch. Slower compute time, but should
-    in general converge in fewer batchs than V1.
+    Batched Guassian Process Upper Confidence Bound agent V2.
+    With GP regressions in-batch (i.e. "hallucinations").
+    Slower compute time, but should in general converge
+    in fewer batchs than V1.
     """
     def __init__(self, *args, **kwargs):
-        super(BatchGPUCBv2, self).__init__(*args, **kwargs)
+        super(HallucinateBatchGPUCB, self).__init__(*args, **kwargs)
         self.to_exclude = []
 
     def learn(self):

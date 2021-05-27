@@ -35,22 +35,19 @@ class TestGA(unittest.TestCase):
         self.assertEqual(subject.n_parents, 3)
 
     def test_fitness(self):
-        """Test fitness function"""
-        mocked_env = mock.Mock()
-        mocked_samp = mock.Mock()
+        """Test fitness function."""
         sample_list = [1, 10, 1.3, 5, 6.9, 15, -5, .1, 0]
-        mocked_samp.side_effect = sample_list
-        mocked_env.sample = mocked_samp
-
+        mocked_env = mock.MagicMock(name='env')
+        mocked_env.sample = mock.MagicMock(name='env_sample',
+                                           return_value=sample_list)
         batch_size = 5
         gen1 = np.random.dirichlet((1, 1), batch_size)
         subject = genetic.GA(mocked_env, batch_size, gen1,
                              mutation_rate=.05, n_parents=3)
-
-        self.assertEqual(subject.fitness(), sample_list[:batch_size])
+        self.assertEqual(subject.fitness(), sample_list)
 
     def test_select_parents(self):
-        """Test select_parents function"""
+        """Test select_parents function."""
         mocked_env = mock.Mock()
 
         batch_size = 5
@@ -71,7 +68,7 @@ class TestGA(unittest.TestCase):
         self.assertEqual(parents, [[2]])
 
     def test_crossover(self):
-        """Test crossover function"""
+        """Test crossover function."""
         parents = [
             [1, 2],
             [5, 4]
@@ -94,15 +91,18 @@ class TestGA(unittest.TestCase):
             self.assertIn(child, possible_gen)
 
     def test_learn(self):
-        """Test learn function"""
-        mocked_env = mock.Mock()
-        mocked_samp = mock.Mock()
+        """Test learn function."""
         sample_list = [1, 10, 1.3, 5, 6.9, 15, -5, .1, 0]
-        mocked_samp.side_effect = sample_list
-        mocked_env.sample = mocked_samp
-
+        mocked_env = mock.MagicMock(name='env')
+        mocked_env.sample = mock.MagicMock(name='env_sample',
+                                           return_value=sample_list)
         batch_size = 5
         gen1 = np.random.dirichlet((1, 1), batch_size)
         subject = genetic.GA(mocked_env, batch_size, gen1,
                              mutation_rate=0.05, n_parents=3)
+        # set up mocks of functions called during learn
+        subject.select_parents = mock.MagicMock(name='select_parents',
+                                                return_value="Parents")
+        subject.crossover = mock.MagicMock(name='crossover',
+                                           return_value="crossover")
         subject.learn()

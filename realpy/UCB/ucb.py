@@ -155,22 +155,6 @@ class BatchGPUCB(GPUCB):
         self.T = self.T + 1  # 5
         return None
 
-#     def batch_sample(self, xs):
-#         """
-#         Sample the sets of input in xs using the environment object.
-#         Save each input and output pair to the X and Y attributes,
-#         respectively.
-
-#         Arguments:
-#             xs - The set of input parameters to sample.
-#                 type == list or array of tuples
-#         """
-#         self.environment.write_actions(xs, self.T)
-#         ys = self.environment.sample()
-#         self.Y.append(ys)
-#         self.X.append(xs)
-#         return None
-
     def batch_sample(self, xs):
         """
         Sample the sets of input in xs using the environment object.
@@ -181,12 +165,9 @@ class BatchGPUCB(GPUCB):
             xs - The set of input parameters to sample.
                 type == list or array of tuples
         """
-        ys = []
-        for x in xs:
-            y = self.environment.sample(x)
-            ys.append(y)
+        ys = self.environment.sample(xs, time_step=self.T)
         self.Y.append(ys)
-        self.X.append(xs)
+        self.X.append(np.array(xs))
         return None
 
     def london_hypercube_sample(self):
@@ -271,36 +252,11 @@ class BatchGPUCBv2(BatchGPUCB):
         """
         self.X = self.X[0:-self.batch_size]
         self.Y = self.Y[0:-self.batch_size]
-        ys = []
-        for x in xs:
-            y = self.environment.sample(x)
-            ys.append(y)
-            self.X.append(x)
-            self.Y.append(y)
+        ys = self.environment.sample(xs, time_step=self.T)
+        self.Y.append(ys)
+        self.X.append(xs)
         self.to_exclude = []
         return None
-
-#     def batch_sample(self, xs):
-#         """
-#         Forgots assumed samples from within batch.
-#         Then samples the sets of input in xs using the environment object.
-#         Save each input and output pair to the X and Y attributes,
-#         respectively. Resets to_exclude for the next batch.
-
-#         Arguments:
-#             xs - The set of input parameters to sample.
-#                 type == list or array of tuples
-#         """
-#         self.X = self.X[0:-self.batch_size]
-#         self.Y = self.Y[0:-self.batch_size]
-
-#         self.environment.write_actions(xs, self.T)
-#         ys = self.environment.sample()
-#         for x in xs:
-#             self.X.append(x)
-#         for y in ys:
-#             self.Y.append(y)
-#         return None
 
     def false_sample(self, i):
         """
@@ -308,6 +264,7 @@ class BatchGPUCBv2(BatchGPUCB):
         respectively.
         """
         self.X.append(self.X_grid[i].tolist())
+        # self.X.append(self.X_grid[i])
         self.Y.append(self.mu[i])
 
     def get_best_ucb(self):

@@ -8,12 +8,13 @@ Gaussian Process Bandit Optimization, Desautels, et. al, 2014.
 import numpy as np
 import sklearn.gaussian_process
 import smt.sampling_methods
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel
 
 
 class GPUCB(object):
     """Adapted from https://github.com/tushuhei/gpucb."""
 
-    def __init__(self, meshgrid, environment, beta=100.):
+    def __init__(self, meshgrid, environment, beta=100., kernel=None):
         """
         Init function.
 
@@ -37,13 +38,14 @@ class GPUCB(object):
         self.environment = environment
         self.beta = beta
         self.input_dimension = self.meshgrid.shape[0]
+        self.kernel = kernel
 
         # save param space as the transpose
         self.X_grid = self.meshgrid.reshape(self.input_dimension, -1).T
         # initialize means and sigmas
         # TODO take in an optional prior for initialization (e.g. a trained GP)
-        self.mu = np.array([0. for _ in range(self.X_grid.shape[0])])
-        self.sigma = np.array([0.5 for _ in range(self.X_grid.shape[0])])
+        self.mu = np.zeros(self.X_grid.shape[0])
+        self.sigma = np.ones(self.X_grid.shape[0])
         # input params that have been explored
         self.X = []
         # outputs of the explored inputs
@@ -70,7 +72,7 @@ class GPUCB(object):
         """
         grid_index = self.argmax_ucb()  # 1
         self.sample(self.X_grid[grid_index])  # 2
-        gp = sklearn.gaussian_process.GaussianProcessRegressor()
+        gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)
         gp.fit(self.X, self.Y)  # 3
         self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)  # 4
         self.T = self.T + 1  # 5
@@ -145,7 +147,7 @@ class BatchGPUCB(GPUCB):
             grid_indices = self.argsort_ucb()  # 1
             self.batch_sample(self.X_grid[grid_indices])  # 2
         # get ucb's from GP
-        gp = sklearn.gaussian_process.GaussianProcessRegressor()
+        gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)
         # reshape appropriately
         X = np.array(self.X).reshape(-1, self.input_dimension)
         Y = np.array(self.Y).reshape(-1)
@@ -198,9 +200,10 @@ class BatchGPUCB(GPUCB):
 
         limits = []
         for dim in self.meshgrid.shape[1:]:
-            limits.append([0, dim])
+            limits.append([0, dim-1])
+        
 
-        LH_sampler = smt.sampling_methods.LHS(xlimits=np.array(limits))
+        LH_sampler = smt.sampling_methods.LHS(xlimits=np.array(limits), random_state = 42)
         sampled = np.round(LH_sampler(self.batch_size)).astype(int)
         t = self.meshgrid.T
         xs = [t[tuple(sample)] for sample in sampled]
@@ -241,7 +244,7 @@ class BatchGPUCBv2(BatchGPUCB):
             for i in range(self.batch_size):  # 1
                 best_idx = self.get_best_ucb()
                 best_idxs.append(best_idx.item())
-                gp = sklearn.gaussian_process.GaussianProcessRegressor()
+                gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)
                 self.false_sample(best_idx)
                 X = np.array(self.X).reshape(-1, self.input_dimension)
                 Y = np.array(self.Y).reshape(-1)
@@ -250,7 +253,7 @@ class BatchGPUCBv2(BatchGPUCB):
 
             self.batch_sample(self.X_grid[best_idxs])  # 2
 
-        gp = sklearn.gaussian_process.GaussianProcessRegressor()  # 3
+        gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)  # 3
         X = np.array(self.X).reshape(-1, self.input_dimension)
         Y = np.array(self.Y).reshape(-1)
         gp.fit(X, Y)
@@ -321,6 +324,100 @@ class BatchGPUCBv2(BatchGPUCB):
         idx = argsort_arr[i]
         while idx in self.to_exclude:
             i += 1
+            if i >= len(argsort_arr):
+                break
             idx = argsort_arr[i]
         self.to_exclude.append(idx)
         return idx
+    
+    
+class BatchGPUCBv3(BatchGPUCBv2):
+    """
+    Batched Guassian Process Upper Confidence Bound agent V2. With
+    GP regressions in-batch. Slower compute time, but should
+    in general converge in fewer batchs than V1.
+    """
+    def __init__(self, *args, **kwargs):
+        super(BatchGPUCBv3, self).__init__(*args, **kwargs)
+        
+    def batch_sample(self, xs):
+        """
+        Forgots assumed samples from within batch. Then samples the sets of
+        input in xs using the environment object.
+        Save each input and output pair to the X and Y attributes,
+        respectively. Resets to_exclude for the next batch.
+
+        Arguments:
+            xs - The set of input parameters to sample.
+                type == list or array of tuples
+        """
+        self.X = self.X[0:-self.batch_size]
+        self.Y = self.Y[0:-self.batch_size]
+        ys = []
+        for x in xs:
+            y = self.environment.sample(x)
+            ys.append(y)
+            self.X.append(x)
+            self.Y.append(y)
+        self.to_exclude = []
+        
+        # Prune 0 potential points in parameter space
+        # If the best lcb is higher than a points ucb, we
+        # no longer need to regress over that point
+        # But don't want to remove information so keep points
+        # In the space that we have sampled at
+        threshold = np.max(self.mu - self.sigma)
+        args = np.argwhere((self.mu+self.sigma*np.sqrt(self.beta)) >= threshold)
+        other = np.argwhere((self.mu+self.sigma*np.sqrt(self.beta)) < threshold)
+        ret = self.X_grid[other.squeeze()]
+        self.X_grid = self.X_grid[args.squeeze()]
+        if len(self.X_grid) < self.batch_size:
+            self.batch_size = len(self.X_grid)
+ 
+        
+        return ret
+    
+    
+    def learn(self):
+        """
+        Learning function.
+
+        Each time learn is called, the agent
+            1. Finds <batch_size> best samples, performing a new GP Regression
+               after each sample, assuming that sample returns its mean
+            2. "Forgots" assumed samples and actually samples those paramaters
+               to get their corresponding batched outputs.
+            3. Trains a new Guassian Process regressor on all data points it
+               has seen, including the latest batched sampling.
+            4. Saves the new predicted means and standard deviations.
+            5. Increases the time step.
+
+        For the first timestep, a london hypercube sampling method is used
+        """
+        if self.T == 0:
+            self.london_hypercube_sample()
+            ret = []
+        else:
+            best_idxs = []
+            for i in range(self.batch_size):  # 1
+                best_idx = self.get_best_ucb()
+                best_idxs.append(best_idx.item())
+                gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)
+                self.false_sample(best_idx)
+                X = np.array(self.X).reshape(-1, self.input_dimension)
+                Y = np.array(self.Y).reshape(-1)
+                gp.fit(X, Y)
+                self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)
+
+            ret = self.batch_sample(self.X_grid[best_idxs])  # 2
+
+        gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)  # 3
+        X = np.array(self.X).reshape(-1, self.input_dimension)
+        Y = np.array(self.Y).reshape(-1)
+        gp.fit(X, Y)
+        if len(self.X_grid.shape) == 1:
+            self.X_grid = self.X_grid.reshape(1, -1)
+        self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)  # 4
+        self.T = self.T + 1   # 5
+
+        return ret

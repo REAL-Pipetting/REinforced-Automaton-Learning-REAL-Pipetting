@@ -15,16 +15,22 @@ The Genetic algorithm (GA) is a technique based on natural selection. A number o
 
 ![GAdiagram](docs/GA_diagram.png)
 
+The hyperparameters associated with the GA are the mutation rate and number of parents. The higher the mutation rate, the more likely a gene is to mutate, adding exploration of the feature space. The number of parents is how many parents from a generation to crossover. The more parents selected the more variety of genes will be passed down to the next generation.
+
 
 ### GP-BUCB
 The Gaussian Process - Upper Confidence Bound algorithm discretizes features to develop a parameter space with number of dimensions equal to the number of features. At each point in the space holds an average reward and standard deviation. It models the reward function as a Gaussian Process. The GP-BUCB selects the sample with the highest upper bound (mean + std * beta^½)  where beta is a hyper parameter that affects how much to weight the standard deviation in the sample process. Higher beta means a higher priority is given to samples with higher uncertainty, encouraging the GP-BUCB to explore the space more. As it samples from the parameter space, the GP-BUCB updates the mean and uncertainty for every point in the parameter space using Gaussian Process Regression. Our implementation of the GP-BUCB uses scikit-learn's implementation of GP Regression. 
 
 ![GPBUCBdiagram](docs/GPBUCB_diagram.png)
 
+In this implementation of GP-BUCB, the algorithm generates the first batch using a [Latin Hypercube Sampling](https://en.wikipedia.org/wiki/Latin_hypercube_sampling) method. This sampling method is biased towards exploring the sampled space. This gives the GPBUCB a even initial understanding of the parameter space. 
+
 
 The diagram below shows the GP-BUCB solving a problem using two features and sampling three times per batch. The location in the parameter space marked with the black box is the location of the solution. The combination of features the GPBUCB chooses to sample each batch are marked green. In this case, the GP-BUCB is able to reach an exact solution, but that does not have to be the case. If given a problem with a solution not in the parameter space, it will converge to the best solution within the parameter space. 
 
 ![GPBUCBviz](docs/GPBUCB_viz.png)
+
+
 
 
 There are additional operations depending on which implementation of the GP-BUCB you use.

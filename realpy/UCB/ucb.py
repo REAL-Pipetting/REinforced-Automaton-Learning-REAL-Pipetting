@@ -142,7 +142,7 @@ class BatchGPUCB(GPUCB):
             5. Increases the time step.
         """
         if self.T == 0:
-            self.london_hypercube_sample()
+            self.latin_hypercube_sample()
         else:
             grid_indices = self.argsort_ucb()  # 1
             self.batch_sample(self.X_grid[grid_indices])  # 2
@@ -191,7 +191,7 @@ class BatchGPUCB(GPUCB):
         self.X.append(xs)
         return None
 
-    def london_hypercube_sample(self):
+    def latin_hypercube_sample(self):
         """
         Does a London Hypercube (LH) sampling of the parameter space.
         LH based on the indexes of the parameter space. Use indices
@@ -238,7 +238,7 @@ class BatchGPUCBv2(BatchGPUCB):
         For the first timestep, a london hypercube sampling method is used
         """
         if self.T == 0:
-            self.london_hypercube_sample()
+            self.latin_hypercube_sample()
         else:
             best_idxs = []
             for i in range(self.batch_size):  # 1
@@ -368,56 +368,56 @@ class BatchGPUCBv3(BatchGPUCBv2):
         # In the space that we have sampled at
         threshold = np.max(self.mu - self.sigma)
         args = np.argwhere((self.mu+self.sigma*np.sqrt(self.beta)) >= threshold)
-        other = np.argwhere((self.mu+self.sigma*np.sqrt(self.beta)) < threshold)
-        ret = self.X_grid[other.squeeze()]
         self.X_grid = self.X_grid[args.squeeze()]
         if len(self.X_grid) < self.batch_size:
             self.batch_size = len(self.X_grid)
  
         
-        return ret
+        return None
     
     
-    def learn(self):
-        """
-        Learning function.
+#     def learn(self):
+#         """
+#         Learning function.
 
-        Each time learn is called, the agent
-            1. Finds <batch_size> best samples, performing a new GP Regression
-               after each sample, assuming that sample returns its mean
-            2. "Forgots" assumed samples and actually samples those paramaters
-               to get their corresponding batched outputs.
-            3. Trains a new Guassian Process regressor on all data points it
-               has seen, including the latest batched sampling.
-            4. Saves the new predicted means and standard deviations.
-            5. Increases the time step.
+#         Each time learn is called, the agent
+#             1. Finds <batch_size> best samples, performing a new GP Regression
+#                after each sample, assuming that sample returns its mean
+#             2. "Forgots" assumed samples and actually samples those paramaters
+#                to get their corresponding batched outputs.
+#             3. Trains a new Guassian Process regressor on all data points it
+#                has seen, including the latest batched sampling.
+#             4. Saves the new predicted means and standard deviations.
+#             5. Increases the time step.
 
-        For the first timestep, a london hypercube sampling method is used
-        """
-        if self.T == 0:
-            self.london_hypercube_sample()
-            ret = []
-        else:
-            best_idxs = []
-            for i in range(self.batch_size):  # 1
-                best_idx = self.get_best_ucb()
-                best_idxs.append(best_idx.item())
-                gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)
-                self.false_sample(best_idx)
-                X = np.array(self.X).reshape(-1, self.input_dimension)
-                Y = np.array(self.Y).reshape(-1)
-                gp.fit(X, Y)
-                self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)
+#         For the first timestep, a london hypercube sampling method is used
+#         """
+#         if self.T == 0:
+#             self.latin_hypercube_sample()
+#         else:
+#             best_idxs = []
+#             for i in range(self.batch_size):  # 1
+#                 best_idx = self.get_best_ucb()
+#                 best_idxs.append(best_idx.item())
+#                 gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)
+#                 self.false_sample(best_idx)
+#                 X = np.array(self.X).reshape(-1, self.input_dimension)
+#                 Y = np.array(self.Y).reshape(-1)
+#                 gp.fit(X, Y)
+#                 self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)
 
-            ret = self.batch_sample(self.X_grid[best_idxs])  # 2
+#             self.batch_sample(self.X_grid[best_idxs])  # 2
 
-        gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)  # 3
-        X = np.array(self.X).reshape(-1, self.input_dimension)
-        Y = np.array(self.Y).reshape(-1)
-        gp.fit(X, Y)
-        if len(self.X_grid.shape) == 1:
-            self.X_grid = self.X_grid.reshape(1, -1)
-        self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)  # 4
-        self.T = self.T + 1   # 5
+#         gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)  # 3
+#         X = np.array(self.X).reshape(-1, self.input_dimension)
+#         Y = np.array(self.Y).reshape(-1)
+#         gp.fit(X, Y)
+#         if len(self.X_grid.shape) == 1:
+#             self.X_grid = self.X_grid.reshape(1, -1)
+#         self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)  # 4
+#         self.T = self.T + 1   # 5
 
-        return ret
+#         return None
+    
+    
+    

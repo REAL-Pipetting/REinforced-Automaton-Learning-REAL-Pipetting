@@ -58,7 +58,7 @@ class TestGPUCB(unittest.TestCase):
         return_val = subject.argmax_ucb()
         self.assertEqual(return_val, 5)
         # making the max occur at index 10 by adjusting the std
-        subject.sigma[10] = 2.
+        subject.sigma[10] = 3
         return_val = subject.argmax_ucb()
         self.assertEqual(return_val, 10)
 
@@ -185,7 +185,7 @@ class TestBatchGPUCB(unittest.TestCase):
         self.assertEqual(subject.Y[0], ["Batch", "Batch", "Batch"])
 
     @unittest.mock.patch('smt.sampling_methods.LHS')
-    def test_london_hypercube_sample(self, mocked_lhs):
+    def test_latin_hypercube_sample(self, mocked_lhs):
         mocked_env = mock.MagicMock(name='env')
         mocked_env.sample = mock.MagicMock(name='env_sample',
                                            return_value="Batch")
@@ -200,12 +200,12 @@ class TestBatchGPUCB(unittest.TestCase):
         coeffs = np.arange(n)
         meshgrid = np.meshgrid(coeffs, coeffs)
         subject = ucb.BatchGPUCB(batch_size, meshgrid, mocked_env, beta=1)
-        subject.london_hypercube_sample()
+        subject.latin_hypercube_sample()
         self.assertEqual(list(subject.X[0][0]), [3, 2])
         self.assertEqual(list(subject.X[0][1]), [0, 1])
         self.assertEqual(list(subject.X[0][2]), [0, 2])
         name, args, kwargs = mocked_lhs.mock_calls[0]
-        self.assertEqual(kwargs['xlimits'].tolist(), [[0, n], [0, n]])
+        self.assertEqual(kwargs['xlimits'].tolist(), [[0, n-1], [0, n-1]])
 
 
 class TestBatchGPUCBv2(unittest.TestCase):
@@ -303,3 +303,45 @@ class TestBatchGPUCBv2(unittest.TestCase):
         subject.false_sample(0)
         self.assertEqual(subject.X[-1], [0, 0])
         self.assertEqual(subject.Y[-1], 0)
+        
+        
+        
+class TestBatchGPUCBv3(unittest.TestCase):
+    """Test Batch GP UCBv2 class."""
+
+    def test_inheritence(self):
+        """Ensure the subclass class inherits from parent class."""
+        self.assertTrue(issubclass(ucb.BatchGPUCBv3, ucb.BatchGPUCBv2))
+
+    def test___init__(self):
+        """Test initialization of the Batch GP UCBv2 class."""
+                """Test initialization of the Batch GP UCBv2 class."""
+        # initialize
+        mocked_env = mock.MagicMock(name='env')
+        n = 5
+        batch_size = 3
+        coeffs = np.arange(n)
+        meshgrid = np.meshgrid(coeffs, coeffs)
+        subject = ucb.BatchGPUCBv3(batch_size, meshgrid, mocked_env, beta=1)
+        # test assignment of additional attribute
+        self.assertTrue(hasattr(subject, 'batch_size'))
+        self.assertEqual(subject.batch_size, batch_size)
+
+
+    def test_batch_sample(self):
+        """Test the environment sampling."""
+        mocked_env = mock.MagicMock(name='env')
+        mocked_env.sample = mock.MagicMock(name='env_sample',
+                                           return_value="Batch")
+        n = 5
+        batch_size = 3
+        coeffs = np.arange(n)
+        meshgrid = np.meshgrid(coeffs, coeffs)
+        subject = ucb.BatchGPUCBv2(batch_size, meshgrid, mocked_env, beta=1)
+        subject.to_exclude.append(1)
+
+        indices = [2, 4, 5]
+        subject.batch_sample(indices)
+        self.assertEqual(subject.Y, ["Batch", "Batch", "Batch"])
+        self.assertEqual(subject.to_exclude, [])
+

@@ -19,12 +19,13 @@ The hyperparameters associated with the GA are the mutation rate and number of p
 
 The two main limitations of Genetic Algorithms are the possibility of converging to a local optimum and taking many iterations to converge to an answer. In an attempt to mitigate these issues, we have used a Gaussian Process to assist our genetic algorithm. The first way in which this works is by helping to tune the
 hyperparameter. The mutation rate controls how much the
- GA explores versus exploits and choosing it in a correct way can massively increase the efficiency of the algorithm. To do this, we have developed a tree seach which runs the GA with different hyperparameter values and calculates which run 
-returns the best result or fitness value (FV). The FV is calculated using the Gaussian Process which is simultaneously trained from data obtained from the experiment. A figure of the tree seach is shown below. 
+ GA explores versus exploits and choosing it in a correct way can massively increase the efficiency of the algorithm. To do this, we have developed a tree search which runs the GA with different hyperparameter values and calculates which run 
+returns the best result or fitness value (FV). The FV is calculated using the Gaussian Process which is simultaneously trained from data obtained from the experiment. A figure of the tree search is shown below. 
 
 ![tree_search](docs/tree_search.jpeg)
 
-The figure above is an example of the hyperparameter tree search that occurs in every iteration of the genetic algorithm. It is important to note that the actual search is much larger than the one displayed, and because of this, one major problem
+The figure above is an example of the hyperparameter tree search that occurs in every iteration of the genetic algorithm. In this tree, the best hyperparameter to use is 1, followed by 0.1, which 
+is what the GA will use. It is important to note that the actual search is much larger than the one displayed, and because of this, one major problem
 is that it can become inefficient due to the large number of hyperparameter permutations. To solve this issue, a separate GA  was applied to the tree search to optimize the fitness values, while changing the hyperparameters.
 After a few iterations on the tree search are conducted, the best value is obtained and the hyperparameter to obtain that value is passed on to the genetic algorithm.
 

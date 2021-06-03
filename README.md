@@ -17,15 +17,16 @@ The Genetic algorithm (GA) is a technique based on natural selection. A number o
 
 The hyperparameters associated with the GA are the mutation rate and number of parents. The higher the mutation rate, the more likely a gene is to mutate, adding exploration of the feature space. The number of parents is how many parents from a generation to crossover. The more parents selected the more variety of genes will be passed down to the next generation.
 
-The two main limitations of Genetic Algorithms are the possibility of converging to a local optimum and taking too long to converge to an answer. In an attempt to mitigate these issues, we have used a Gaussian Process (GP) to assist our Genetic Algorithm. The first way in which this works is by helping in the hyperparameter tuning. The mutation rate controls how much the
- GA explores versus exploits and choosing it in a correct way can massively increase the efficiency of the algorithm. To do this, we have developed a tree seach which runs the GA with different values of hyperparamters and calculates which run 
-returns the best result or fitness value (FV). The FV is calculated by using the Gaussian Process which is simultaneously trained from data obtained from the experiment. A figure of the tree seach is shown below. 
+The two main limitations of Genetic Algorithms are the possibility of converging to a local optimum and taking many iterations to converge to an answer. In an attempt to mitigate these issues, we have used a Gaussian Process to assist our genetic algorithm. The first way in which this works is by helping to tune the
+hyperparameter. The mutation rate controls how much the
+ GA explores versus exploits and choosing it in a correct way can massively increase the efficiency of the algorithm. To do this, we have developed a tree seach which runs the GA with different hyperparameter values and calculates which run 
+returns the best result or fitness value (FV). The FV is calculated using the Gaussian Process which is simultaneously trained from data obtained from the experiment. A figure of the tree seach is shown below. 
 
 ![tree_search](docs/tree_search.jpeg)
 
-The figure above is an example of the hyperparameter tree search that occurs in every iteration of the genetic algorithm. It is important to note that the actual search is much larger than the one displayed. One major problem of this tree search
-is that it can become inefficient due to the large number of hyperparameter permutations. To solve this issue, a separate genetic algorithm was applied to the tree search to optimize the fitness values, while changing the hyperparameters.
-After a few iterations on the tree search are conducted, the best value is obtained and the hyperparameters to obtain that value is passed on to the genetic algorithm.
+The figure above is an example of the hyperparameter tree search that occurs in every iteration of the genetic algorithm. It is important to note that the actual search is much larger than the one displayed, and because of this, one major problem
+is that it can become inefficient due to the large number of hyperparameter permutations. To solve this issue, a separate GA  was applied to the tree search to optimize the fitness values, while changing the hyperparameters.
+After a few iterations on the tree search are conducted, the best value is obtained and the hyperparameter to obtain that value is passed on to the genetic algorithm.
 
 Another way the Gaussian Process is used to assist the GA is by including an optimized candidate in the next population. The effect of this is that it biases the GA into candidates which, according to the Gaussian Process, has a
  high fitness value. The GA searches in the vicinity of this optimum which in turn allows better data to train the Gaussian Process. A flowchart how all these algorithms work together is shown below.

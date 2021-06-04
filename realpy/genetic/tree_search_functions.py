@@ -1,27 +1,30 @@
+"""Tree serach functions for the GA."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.gaussian_process import GaussianProcessRegressor
 from realpy.genetic.GA_functions import fitness, GA_algorithm_unnormalized, \
-                         perform_iteration, set_seed
+    perform_iteration, set_seed
 
 
 def zeroth_iteration(conc_array, spectra_array, x_test):
-    '''
-    Performs the zeroth iteration.
+    """
+    Perform the zeroth iteration.
+
     Inputs:
-    - conc_array: 2d array of the first concentration values to test
-    - spectra_array: 2d array of the spectra values measured from conc_array
-    - x_test: 1d array of the desired spectra
+        - conc_array: 2d array of the first concentration values to test
+        - spectra_array: 2d array of spectra values measured from conc_array
+        - x_test: 1d array of the desired spectra
     Outputs:
-    - next_gen_conc: 2d array of the next concentrations to test
-    - current_gen_spectra: same thing as spectra_array
-    - median_fitness_list: list of the median fitness values
-    - max_fitness_list: list of the max fitness values
-    - iteration: list of the iteration numbers
-    - mutation_rate_list: list of the mutation rates
-    - mutation_rate_list_2: list of the second type of mutation rate
-    '''
+        - next_gen_conc: 2d array of the next concentrations to test
+        - current_gen_spectra: same thing as spectra_array
+        - median_fitness_list: list of the median fitness values
+        - max_fitness_list: list of the max fitness values
+        - iteration: list of the iteration numbers
+        - mutation_rate_list: list of the mutation rates
+        - mutation_rate_list_2: list of the second type of mutation rate
+    """
     seed = np.random.randint(0, 100)
     set_seed(seed)
     spectra = spectra_array
@@ -60,21 +63,25 @@ def zeroth_iteration(conc_array, spectra_array, x_test):
 def perform_Surrogate_Prediction(next_gen_conc,
                                  conc_array_actual,
                                  spectra_array_actual):
-    '''
+    """
+    Fit a surrogate model.
+
     Fits a surrogate model to conc_array_actual and
     spectra_array_actual and predicts the spectra of next_gen_conc
+
     Inputs:
-    - next_gen_conc: A 2d array of the concentrations from
-    the current iteration
-    - conc_array_actual: A 2d array of the concentrations from
-    all the previous iterations
-    - spectra_array_actual: A 2d array of all the concentrations
-    from all the previous iterations.
+        - next_gen_conc: A 2d array of the concentrations from
+        the current iteration
+        - conc_array_actual: A 2d array of the concentrations from
+        all the previous iterations
+        - spectra_array_actual: A 2d array of all the concentrations
+        from all the previous iterations.
+
     Outputs:
-    - spectra_prediction: A 2d array of the predicted spectra of
-    next_gen_conc
-    - score: The score of the surrogate model
-    '''
+        - spectra_prediction: A 2d array of the predicted spectra of
+        next_gen_conc
+        - score: The score of the surrogate model
+    """
     gpr = GaussianProcessRegressor().fit(
         conc_array_actual, spectra_array_actual)
     score = gpr.score(conc_array_actual,
@@ -88,9 +95,13 @@ def MCTS(Iterations_per_move, moves, GA_iterations,
          next_gen_conc, x_test, conc_array_actual,
          spectra_array_actual,
          seed, n_samples):
-    '''Performs another an additional iteration. Use this after
-    performing the 0th iteration with the function zeroth_iteration
-      Inputs:
+    """
+    Perform another an additional iteration.
+
+    Use this after performing the 0th iteration with
+    the function zeroth_iteration
+
+    Inputs:
       - Iterations_per_move: An integer of how many iterations
       per move should be performed.
       - moves: An integer of how many moves ahead to predict.
@@ -113,7 +124,8 @@ def MCTS(Iterations_per_move, moves, GA_iterations,
       - seed: An integer which determines the random seed used.
       - n_samples: An integer of how many samples per
       batch/iteration/generations.
-      Outputs:
+
+    Outputs:
       - mutation_rate: mutation rate used in the next iteration
       - mutation_rate_2: mutation rate 2 used in the next iteration
       - best_move: A 1d array of the best move that should be taken
@@ -125,7 +137,7 @@ def MCTS(Iterations_per_move, moves, GA_iterations,
       - desired: normalized x_test
       - current_gen_spectra: 2d array of the current generation of
       spectra values.
-    '''
+    """
     next_gen_conc_original = next_gen_conc
     dictionary_of_moves = {}
     fitness_array = []  # initialize array for flake8
@@ -135,15 +147,13 @@ def MCTS(Iterations_per_move, moves, GA_iterations,
         conc_fitness_list = []
         for GA_iteration in range(GA_iterations):
             if GA_iteration == 0:
-                for cols in range(move_number+1):
-                    mutation_rate_array = (np.round(
-                        np.random.uniform(
-                            0, 10, Iterations_per_move))/10
-                                          ).reshape(-1, 1)
-                    fitness_multiplier_array = (np.round(
-                        np.random.uniform(
-                            0, 10, Iterations_per_move))/10
-                                               ).reshape(-1, 1)
+                for cols in range(move_number + 1):
+                    mutation_rate_array = np.round(
+                        np.random.uniform(0, 10, Iterations_per_move)) / 10
+                    mutation_rate_array = mutation_rate_array.reshape(-1, 1)
+                    fitness_multiply = np.round(
+                        np.random.uniform(0, 10, Iterations_per_move)) / 10
+                    fitness_multiplier_array = fitness_multiply.reshape(-1, 1)
                     move = np.hstack((mutation_rate_array,
                                       fitness_multiplier_array))
                     if cols == 0:
@@ -152,31 +162,31 @@ def MCTS(Iterations_per_move, moves, GA_iterations,
                         move_array = np.hstack((move_array, move))
             else:
                 optimize_array = np.array(
-                    [10]*Iterations_per_move).reshape(-1, 1)
+                    [10] * Iterations_per_move).reshape(-1, 1)
                 move_array, _, _ = GA_algorithm_unnormalized(
-                        fitness_array[:, move_number].reshape(-1, 1),
-                        move_array, optimize_array, 50,
-                        Iterations_per_move, 0.1, 2)
+                    fitness_array[:, move_number].reshape(-1, 1),
+                    move_array, optimize_array, 50,
+                    Iterations_per_move, 0.1, 2)
             if move_number == 0:
                 all_moves_array = move_array
             else:
                 all_moves_array = np.hstack((all_moves_array, move_array))
             for row in range(Iterations_per_move):
                 Fitness_move_1 = []
-                for J in range(0, 2*(move_number+1), 2):
+                for J in range(0, 2 * (move_number + 1), 2):
                     if J == 0:
                         next_gen_conc = next_gen_conc_original
                         next_gen_conc, median_fitness, max_fitness = \
                             perform_iteration(
-                                          current_gen_spectra,
-                                          next_gen_conc, x_test, 50,
-                                          n_samples, move_array[row, J],
-                                          move_array[row, J+1])
+                                current_gen_spectra,
+                                next_gen_conc, x_test, 50,
+                                n_samples, move_array[row, J],
+                                move_array[row, J + 1])
                         simulated_spectra, surrogate_score = \
                             perform_Surrogate_Prediction(
-                                                     next_gen_conc,
-                                                     conc_array_actual,
-                                                     spectra_array_actual)
+                                next_gen_conc,
+                                conc_array_actual,
+                                spectra_array_actual)
                     ss = simulated_spectra.T
                     simulated_spectra = MinMaxScaler().fit(ss).transform(ss).T
                     desired = MinMaxScaler().fit(x_test).transform(x_test).T
@@ -207,9 +217,9 @@ def MCTS(Iterations_per_move, moves, GA_iterations,
     for m in range(moves):
         dictionary_of_moves[moves]
         row_number_max_fitness = np.unravel_index(
-            np.argmax(dictionary_of_moves[m+1][:, -1]),
-            dictionary_of_moves[m+1][:, -1].shape)
-        best_move = dictionary_of_moves[m+1][row_number_max_fitness, :]
+            np.argmax(dictionary_of_moves[m + 1][:, -1]),
+            dictionary_of_moves[m + 1][:, -1].shape)
+        best_move = dictionary_of_moves[m + 1][row_number_max_fitness, :]
         best_move_list.append(best_move[-1][-1])
     best_move_array = np.asarray(best_move_list)
     best_move_number = np.unravel_index(np.argmax(best_move_array),
@@ -235,10 +245,13 @@ def nth_iteration(Iterations, Moves_ahead, GA_iterations, n_samples,
                   conc_array_actual, spectra_array_actual, seed,
                   median_fitness_list, max_fitness_list,
                   iteration, mutation_rate_list, fitness_multiplier_list):
-    '''
-       Performs another an additional iteration. Use this after performing
-       the 0th iteration with the function zeroth_iteration.
-      Inputs:
+    """
+    Perform another an additional iteration.
+
+    Use this after performing the 0th iteration with the
+    function zeroth_iteration.
+
+    Inputs:
       - Iterations: An integer of how many iterations the MCTS will perform
       per batch.
       - Moves_ahead: An integer of how many moves ahead to predict.
@@ -269,7 +282,8 @@ def nth_iteration(Iterations, Moves_ahead, GA_iterations, n_samples,
       previous generation/iterations.
       - mutation_rate_list_2: a list of all the mutation2 rates used
       in the previous generations/iterations.
-      Outputs:
+
+    Outputs:
       - mutation_rate: mutation rate used in the next iteration
       - mutation_rate_2: mutation rate 2 used in the next iteration
       - mutation_rate_list: an updated list of all the mutation
@@ -284,7 +298,7 @@ def nth_iteration(Iterations, Moves_ahead, GA_iterations, n_samples,
       - surrogate_score: A float of the score of the surrogate model.
       - next_gen_conc: A 2d array of the next generation of
       concentrations to be tested using uv-vis.
-    '''
+    """
     set_seed(seed)
     mutation_rate, fitness_multiplier, best_move, best_move_turn, \
         max_fitness, surrogate_score, desired_1, current_gen_spectra_1, \
@@ -317,9 +331,10 @@ def nth_iteration(Iterations, Moves_ahead, GA_iterations, n_samples,
 
 def plot_fitness(next_gen_conc, current_gen_spectra, x_test,
                  median_fitness_list, max_fitness_list, iteration, savefig):
-    '''
-        Plots the fitness of the generations with the iteration number
-        Inputs:
+    """
+    Plot the fitness of the generations with the iteration number.
+
+    Inputs:
         - next_gen_conc: 2d array of the concentrations used to make
         the current_gen_spectra.
         - current_gen_spectra: 2d array of the all the spectra where the number
@@ -335,11 +350,12 @@ def plot_fitness(next_gen_conc, current_gen_spectra, x_test,
         - iteration: list of the iteration numbers
         - savefig: either True or False, determines whether to save the
         figures as images.
-        Outputs:
+
+    Outputs:
         - median_fitness_list: updates median fitness list
         - max_fitness_list: updates max fitness lits
         - iteration: updates iteration number
-    '''
+    """
     # Normalize Data
     spectra = current_gen_spectra
     spectra = spectra.T
@@ -372,9 +388,10 @@ def plot_fitness(next_gen_conc, current_gen_spectra, x_test,
 
 
 def plot_spectra(current_gen_spectra, x_test, wavelength, iteration, savefig):
-    '''
-        Plots the Uv-vis spectra along with the desired one.
-        Inputs:
+    """
+    Plot the Uv-vis spectra along with the desired one.
+
+    Inputs:
         - current_gen_spectra: 2d array of the all the spectra where the
         number of rows equal the number of samples and the number of columns
         equal the number of datapoints in the spectra.
@@ -385,7 +402,7 @@ def plot_spectra(current_gen_spectra, x_test, wavelength, iteration, savefig):
         - iteration: list of the iteration numbers
         - savefig: either True or False, determines whether to save the figures
         as images.
-    '''
+    """
     spectra = current_gen_spectra
     spectra = spectra.T
     spectra = MinMaxScaler().fit(spectra).transform(spectra).T
@@ -401,7 +418,7 @@ def plot_spectra(current_gen_spectra, x_test, wavelength, iteration, savefig):
     ax[0].legend(loc=2)
     fitness_list = []
     for ii in range(spectra.shape[0]):
-        fitness = 1/np.sum(np.abs(spectra[ii, :] - desired))
+        fitness = 1 / np.sum(np.abs(spectra[ii, :] - desired))
         fitness_list.append(fitness)
     fitness_array = np.asarray(fitness_list).reshape(-1, 1)
     array = np.hstack((spectra, fitness_array))

@@ -168,6 +168,13 @@ class TestBatchGPUCB(unittest.TestCase):
         # check time step increase
         self.assertEqual(subject.T, 1)
 
+        # test second time step
+        subject = ucb.BatchGPUCB(batch_size, meshgrid, mocked_env, beta=1)
+        subject.T = 1
+        subject.learn()
+        # check time step increase
+        self.assertEqual(subject.T, 2)
+
     def test_batch_sample(self):
         """Test the environment sampling."""
         # initialize
@@ -275,6 +282,13 @@ class TestBatchGPUCBv2(unittest.TestCase):
         # check time step increase
         self.assertEqual(subject.T, 1)
 
+        # test second time step
+        subject = ucb.BatchGPUCB(batch_size, meshgrid, mocked_env, beta=1)
+        subject.T = 1
+        subject.learn()
+        # check time step increase
+        self.assertEqual(subject.T, 2)
+
     def test_batch_sample(self):
         """Test the environment sampling."""
         # initialize
@@ -336,7 +350,7 @@ class TestBatchGPUCBv3(unittest.TestCase):
         batch_size = 3
         coeffs = np.arange(n)
         meshgrid = np.meshgrid(coeffs, coeffs)
-        subject = ucb.BatchGPUCBv2(batch_size, meshgrid, mocked_env, beta=1)
+        subject = ucb.BatchGPUCBv3(batch_size, meshgrid, mocked_env, beta=1)
         subject.to_exclude.append(1)
 
         indices = [2, 4, 5]

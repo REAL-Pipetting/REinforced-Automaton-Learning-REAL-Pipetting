@@ -70,3 +70,12 @@ To install realpy:
 Or navigate to this directory in the terminal and ```pip install .```
 
 Afterwards, you can ```import realpy``` for use in any python file.
+
+
+### Future directions
+Future optimizations to be made to the Batch GP BUCB agent:
+1. Incorporation of input parameter constraints
+2. Sequential Gaussian Process Regression
+3. Lazy Variance Calculation
+4. Incorporation of prior model
+5. Parallel learners

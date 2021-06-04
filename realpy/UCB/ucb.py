@@ -8,13 +8,13 @@ Gaussian Process Bandit Optimization, Desautels, et. al, 2014.
 import numpy as np
 import sklearn.gaussian_process
 import smt.sampling_methods
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel
+from sklearn.gaussian_process.kernels import RBF
 
 
 class GPUCB(object):
     """Adapted from https://github.com/tushuhei/gpucb."""
 
-    def __init__(self, meshgrid, environment, beta=100., kernel=None):
+    def __init__(self, meshgrid, environment, beta=100., kernel=RBF):
         """
         Init function.
 
@@ -72,7 +72,8 @@ class GPUCB(object):
         """
         grid_index = self.argmax_ucb()  # 1
         self.sample(self.X_grid[grid_index])  # 2
-        gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)
+        gp = sklearn.gaussian_process.GaussianProcessRegressor(
+            kernel=self.kernel)
         gp.fit(self.X, self.Y)  # 3
         self.mu, self.sigma = gp.predict(self.X_grid, return_std=True)  # 4
         self.T = self.T + 1  # 5
@@ -81,6 +82,7 @@ class GPUCB(object):
     def sample(self, x):
         """
         Sample the input x using the environment object.
+
         Save the input and output to the X and Y attributes, respectively.
 
         Arguments:
@@ -147,7 +149,8 @@ class BatchGPUCB(GPUCB):
             grid_indices = self.argsort_ucb()  # 1
             self.batch_sample(self.X_grid[grid_indices])  # 2
         # get ucb's from GP
-        gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)
+        gp = sklearn.gaussian_process.GaussianProcessRegressor(
+            kernel=self.kernel)
         # reshape appropriately
         X = np.array(self.X).reshape(-1, self.input_dimension)
         Y = np.array(self.Y).reshape(-1)
@@ -157,25 +160,10 @@ class BatchGPUCB(GPUCB):
         self.T = self.T + 1  # 5
         return None
 
-#     def batch_sample(self, xs):
-#         """
-#         Sample the sets of input in xs using the environment object.
-#         Save each input and output pair to the X and Y attributes,
-#         respectively.
-
-#         Arguments:
-#             xs - The set of input parameters to sample.
-#                 type == list or array of tuples
-#         """
-#         self.environment.write_actions(xs, self.T)
-#         ys = self.environment.sample()
-#         self.Y.append(ys)
-#         self.X.append(xs)
-#         return None
-
     def batch_sample(self, xs):
         """
         Sample the sets of input in xs using the environment object.
+
         Save each input and output pair to the X and Y attributes,
         respectively.
 
@@ -193,17 +181,17 @@ class BatchGPUCB(GPUCB):
 
     def latin_hypercube_sample(self):
         """
-        Does a London Hypercube (LH) sampling of the parameter space.
+        Do a London Hypercube (LH) sampling of the parameter space.
+
         LH based on the indexes of the parameter space. Use indices
         to get X values and pass into batch_sample.
         """
-
         limits = []
         for dim in self.meshgrid.shape[1:]:
-            limits.append([0, dim-1])
-        
+            limits.append([0, dim - 1])
 
-        LH_sampler = smt.sampling_methods.LHS(xlimits=np.array(limits), random_state = 42)
+        LH_sampler = smt.sampling_methods.LHS(xlimits=np.array(limits),
+                                              random_state=42)
         sampled = np.round(LH_sampler(self.batch_size)).astype(int)
         t = self.meshgrid.T
         xs = [t[tuple(sample)] for sample in sampled]
@@ -213,11 +201,14 @@ class BatchGPUCB(GPUCB):
 
 class BatchGPUCBv2(BatchGPUCB):
     """
-    Batched Guassian Process Upper Confidence Bound agent V2. With
-    GP regressions in-batch. Slower compute time, but should
-    in general converge in fewer batchs than V1.
+    Batched Guassian Process Upper Confidence Bound agent V2.
+
+    With GP regressions in-batch. Slower compute time, but should
+    in general converge in fewer batches than V1.
     """
+
     def __init__(self, *args, **kwargs):
+        """Init function."""
         super(BatchGPUCBv2, self).__init__(*args, **kwargs)
         self.to_exclude = []
 
@@ -244,7 +235,8 @@ class BatchGPUCBv2(BatchGPUCB):
             for i in range(self.batch_size):  # 1
                 best_idx = self.get_best_ucb()
                 best_idxs.append(best_idx.item())
-                gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)
+                gp = sklearn.gaussian_process.GaussianProcessRegressor(
+                    kernel=self.kernel)
                 self.false_sample(best_idx)
                 X = np.array(self.X).reshape(-1, self.input_dimension)
                 Y = np.array(self.Y).reshape(-1)
@@ -253,7 +245,8 @@ class BatchGPUCBv2(BatchGPUCB):
 
             self.batch_sample(self.X_grid[best_idxs])  # 2
 
-        gp = sklearn.gaussian_process.GaussianProcessRegressor(kernel=self.kernel)  # 3
+        gp = sklearn.gaussian_process.GaussianProcessRegressor(
+            kernel=self.kernel)  # 3
         X = np.array(self.X).reshape(-1, self.input_dimension)
         Y = np.array(self.Y).reshape(-1)
         gp.fit(X, Y)
@@ -263,10 +256,12 @@ class BatchGPUCBv2(BatchGPUCB):
 
     def batch_sample(self, xs):
         """
-        Forgots assumed samples from within batch. Then samples the sets of
+        Sample in batches, while forgetting the hallucinated samples.
+
+        Forget assumed samples from within batch. Then sample the sets of
         input in xs using the environment object.
         Save each input and output pair to the X and Y attributes,
-        respectively. Resets to_exclude for the next batch.
+        respectively. Reset to_exclude for the next batch.
 
         Arguments:
             xs - The set of input parameters to sample.
@@ -283,42 +278,22 @@ class BatchGPUCBv2(BatchGPUCB):
         self.to_exclude = []
         return None
 
-#     def batch_sample(self, xs):
-#         """
-#         Forgots assumed samples from within batch.
-#         Then samples the sets of input in xs using the environment object.
-#         Save each input and output pair to the X and Y attributes,
-#         respectively. Resets to_exclude for the next batch.
-
-#         Arguments:
-#             xs - The set of input parameters to sample.
-#                 type == list or array of tuples
-#         """
-#         self.X = self.X[0:-self.batch_size]
-#         self.Y = self.Y[0:-self.batch_size]
-
-#         self.environment.write_actions(xs, self.T)
-#         ys = self.environment.sample()
-#         for x in xs:
-#             self.X.append(x)
-#         for y in ys:
-#             self.Y.append(y)
-#         return None
-
     def false_sample(self, i):
         """
+        Create false or hallucinated sample.
+
         Appends sample parameters and currently known mean to X and Y
         respectively.
         """
         self.X.append(self.X_grid[i].tolist())
         self.Y.append(self.mu[i])
-        
         return None
 
     def get_best_ucb(self):
         """
-        Return the index of the batch with the highest UCB. That
-        has not already been selected in that batch
+        Return the index of the batch with the highest UCB.
+
+        (That has not already been selected in that batch.)
         """
         argsort_arr = np.flip(np.argsort(self.mu + self.sigma *
                                          np.sqrt(self.beta)))
@@ -331,23 +306,26 @@ class BatchGPUCBv2(BatchGPUCB):
             idx = argsort_arr[i]
         self.to_exclude.append(idx)
         return idx
-    
-    
+
+
 class BatchGPUCBv3(BatchGPUCBv2):
     """
-    Batched Guassian Process Upper Confidence Bound agent V2. With
-    GP regressions in-batch. Slower compute time, but should
-    in general converge in fewer batchs than V1.
+    Batched Guassian Process Upper Confidence Bound agent V3.
+
+    With GP regressions in-batch. Prunes the parameter space using
+    the lower confidence bound of the best results, so this should
+    in general take less compute time than V2.
     """
-    def __init__(self, *args, **kwargs):
-        super(BatchGPUCBv3, self).__init__(*args, **kwargs)
-        
+
     def batch_sample(self, xs):
         """
-        Forgots assumed samples from within batch. Then samples the sets of
+        Sample in batches, while forgetting the hallucinated samples.
+
+        Forget assumed samples from within batch. Then sample the sets of
         input in xs using the environment object.
         Save each input and output pair to the X and Y attributes,
-        respectively. Resets to_exclude for the next batch.
+        respectively. Reset to_exclude for the next batch.
+        Finally, prune the parameter space X_grid.
 
         Arguments:
             xs - The set of input parameters to sample.
@@ -362,19 +340,17 @@ class BatchGPUCBv3(BatchGPUCBv2):
             self.X.append(x)
             self.Y.append(y)
         self.to_exclude = []
-        
+
         # Prune 0 potential points in parameter space
         # If the best lcb is higher than a points ucb, we
         # no longer need to regress over that point
         # But don't want to remove information so keep points
         # In the space that we have sampled at
         threshold = np.max(self.mu - self.sigma)
-        args = np.argwhere((self.mu+self.sigma*np.sqrt(self.beta)) >= threshold)
+        args = np.argwhere(
+            (self.mu + self.sigma * np.sqrt(self.beta)) >= threshold)
         self.X_grid = self.X_grid[args.squeeze()]
         if len(self.X_grid) < self.batch_size:
             self.batch_size = len(self.X_grid)
- 
-        
+
         return None
-    
-    

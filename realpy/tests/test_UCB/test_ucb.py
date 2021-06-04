@@ -186,6 +186,7 @@ class TestBatchGPUCB(unittest.TestCase):
 
     @unittest.mock.patch('smt.sampling_methods.LHS')
     def test_latin_hypercube_sample(self, mocked_lhs):
+        """Test the Latin hypercube sampling on first iteration of learn."""
         mocked_env = mock.MagicMock(name='env')
         mocked_env.sample = mock.MagicMock(name='env_sample',
                                            return_value="Batch")
@@ -205,7 +206,7 @@ class TestBatchGPUCB(unittest.TestCase):
         self.assertEqual(list(subject.X[0][1]), [0, 1])
         self.assertEqual(list(subject.X[0][2]), [0, 2])
         name, args, kwargs = mocked_lhs.mock_calls[0]
-        self.assertEqual(kwargs['xlimits'].tolist(), [[0, n-1], [0, n-1]])
+        self.assertEqual(kwargs['xlimits'].tolist(), [[0, n - 1], [0, n - 1]])
 
 
 class TestBatchGPUCBv2(unittest.TestCase):
@@ -293,6 +294,7 @@ class TestBatchGPUCBv2(unittest.TestCase):
         self.assertEqual(subject.to_exclude, [])
 
     def test_false_sample(self):
+        """Test generating the hallucinated ('false') sample."""
         mocked_env = mock.MagicMock(name='env',
                                     return_value="Batch")
         n = 5
@@ -303,11 +305,10 @@ class TestBatchGPUCBv2(unittest.TestCase):
         subject.false_sample(0)
         self.assertEqual(subject.X[-1], [0, 0])
         self.assertEqual(subject.Y[-1], 0)
-        
-        
-        
+
+
 class TestBatchGPUCBv3(unittest.TestCase):
-    """Test Batch GP UCBv2 class."""
+    """Test Batch GP UCBv3 class."""
 
     def test_inheritence(self):
         """Ensure the subclass class inherits from parent class."""
@@ -325,7 +326,6 @@ class TestBatchGPUCBv3(unittest.TestCase):
         # test assignment of additional attribute
         self.assertTrue(hasattr(subject, 'batch_size'))
         self.assertEqual(subject.batch_size, batch_size)
-
 
     def test_batch_sample(self):
         """Test the environment sampling."""

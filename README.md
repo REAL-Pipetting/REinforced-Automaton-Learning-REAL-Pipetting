@@ -1,5 +1,6 @@
 # REinforced-Automaton-Learning-REAL-Pipetting
 [![Build Status](https://travis-ci.com/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting.svg?branch=main)](https://travis-ci.com/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting)
+curl -X PURGE https://coveralls.io/repos/github/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting/badge.svg?branch=main
 [![Coverage Status](https://coveralls.io/repos/github/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting/badge.svg?branch=main)](https://coveralls.io/github/REAL-Pipetting/REinforced-Automaton-Learning-REAL-Pipetting?branch=main)
 
 

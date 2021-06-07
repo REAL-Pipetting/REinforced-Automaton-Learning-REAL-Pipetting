@@ -1,7 +1,7 @@
 """Tree serach functions for the GA."""
 
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.gaussian_process import GaussianProcessRegressor
 from realpy.genetic.GA_functions import fitness, GA_algorithm_unnormalized, \
@@ -48,11 +48,11 @@ def zeroth_iteration(conc_array, spectra_array, x_test):
     next_gen_conc = conc_array
     current_gen_spectra = spectra_array
     # Plotting
-    plt.scatter(iteration, median_fitness_list, label='median fitness')
-    plt.scatter(iteration, max_fitness_list, label='max fitness')
-    plt.ylim([0, 3])
-    plt.legend(loc=2)
-    plt.show()
+    # plt.scatter(iteration, median_fitness_list, label='median fitness')
+    # plt.scatter(iteration, max_fitness_list, label='max fitness')
+    # plt.ylim([0, 3])
+    # plt.legend(loc=2)
+    # plt.show()
     print('The max fitness is:', max_fitness)
     print('The median fitness is:', median_fitness)
     return next_gen_conc, current_gen_spectra, median_fitness_list, \
@@ -329,6 +329,9 @@ def nth_iteration(Iterations, Moves_ahead, GA_iterations, n_samples,
         best_conc_array, dictionary_of_moves
 
 
+'''
+Plotting functions.
+
 def plot_fitness(next_gen_conc, current_gen_spectra, x_test,
                  median_fitness_list, max_fitness_list, iteration, savefig):
     """
@@ -371,19 +374,19 @@ def plot_fitness(next_gen_conc, current_gen_spectra, x_test,
     max_fitness_list.append(max_fitness)
     iteration.append(i)
     # Plotting
-    # fig, ax = plt.subplots(figsize=(10, 5))
-    # ax.plot(iteration, median_fitness_list, label='median fitness')
-    # ax.plot(iteration, max_fitness_list, label='max fitness')
-    # ax.set_xticks(iteration)
-    # ax.set_ylabel('fitness')
-    # ax.set_xlabel('Iteration')
-    # ax.legend()
-    # print('The max fitness is:', max_fitness)
-    # print('The median fitness is:', median_fitness)
-    # if savefig is True:
-    #     plt.savefig('Plot_Fitness.png')
-    # else:
-    #     pass
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(iteration, median_fitness_list, label='median fitness')
+    ax.plot(iteration, max_fitness_list, label='max fitness')
+    ax.set_xticks(iteration)
+    ax.set_ylabel('fitness')
+    ax.set_xlabel('Iteration')
+    ax.legend()
+    print('The max fitness is:', max_fitness)
+    print('The median fitness is:', median_fitness)
+    if savefig is True:
+        plt.savefig('Plot_Fitness.png')
+    else:
+        pass
     return median_fitness_list, max_fitness_list, iteration
 
 
@@ -423,16 +426,17 @@ def plot_spectra(current_gen_spectra, x_test, wavelength, iteration, savefig):
     fitness_array = np.asarray(fitness_list).reshape(-1, 1)
     array = np.hstack((spectra, fitness_array))
     sorted_array = array[np.argsort(array[:, -1])]
-    # ax[1].plot(wavelength, desired.T, label='Target',
-    #           linewidth=5, c='k')
-    # ax[1].plot(wavelength, sorted_array[-1, :-1],
-    #           label='Best Sample', linewidth=3)
-    # ax[1].set_title('Spectra of Best Sample')
-    # ax[1].set_ylabel('Absorbance')
-    # ax[1].set_xlabel('Wavelength (nm)')
-    # ax[1].legend(loc=2)
-    # figure_name = 'Iteration_' + str(iteration[-1]) + '.png'
-    # if savefig is True:
-    #    plt.savefig(figure_name)
-    # else:
-    #    pass
+    ax[1].plot(wavelength, desired.T, label='Target',
+              linewidth=5, c='k')
+    ax[1].plot(wavelength, sorted_array[-1, :-1],
+              label='Best Sample', linewidth=3)
+    ax[1].set_title('Spectra of Best Sample')
+    ax[1].set_ylabel('Absorbance')
+    ax[1].set_xlabel('Wavelength (nm)')
+    ax[1].legend(loc=2)
+    figure_name = 'Iteration_' + str(iteration[-1]) + '.png'
+    if savefig is True:
+       plt.savefig(figure_name)
+    else:
+       pass
+'''

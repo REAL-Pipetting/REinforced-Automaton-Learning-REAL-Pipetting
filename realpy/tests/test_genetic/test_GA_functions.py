@@ -13,6 +13,14 @@ class TestGA(unittest.TestCase):
         GA_functions.set_seed(1)
         self.assertEqual(GA_functions.seed, 1)
 
+    def test_conc_to_spectra(self):
+        """Test conc from spectra."""
+        stock_spectra = np.array([[1, 1, 1], [2, 2, 2]]).T
+        conc = np.array([[1, 1], [3, 4]])
+        returned_spectra = GA_functions.conc_to_spectra(conc, stock_spectra)
+        expected = np.array([[3, 3, 3], [11, 11, 11]])
+        np.testing.assert_array_equal(returned_spectra, expected)
+
     def test_functions(self):
         """Test the rest of the GA helper functions."""
         GA_functions.set_seed(1)
